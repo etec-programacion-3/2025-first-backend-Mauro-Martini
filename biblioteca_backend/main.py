@@ -33,9 +33,10 @@ class LibroOut(BaseModel):
     categoria: str
     estado: str
 
-    class Config:
-        orm_mode = True
 
+    model_config = {
+        "from_attributes": True
+    }
 class LibroUpdate(BaseModel):
     titulo: constr(min_length=1, max_length=255) | None = None
     autor: constr(min_length=1, max_length=255) | None = None
@@ -67,10 +68,31 @@ async def crear_libro(libro: LibroSchema):
     libro_obj = await Libro.create(**libro.dict())
     return libro_obj
 
-@app.get("/libros/", response_model=List[LibroSchema], summary="Listar libros", description="Devuelve una lista de todos los libros registrados.")
-async def listar_libros():
-    """Obtiene todos los libros disponibles en la base de datos."""
-    return await Libro.all()
+from fastapi import Query
+
+@app.get("/libros/", response_model=List[LibroSchema], summary="Listar libros", description="Lista libros con opciones de ordenamiento y paginación.")
+async def listar_libros(
+    ordenar_por: str = Query("titulo", description="Campo por el que se desea ordenar (ej: titulo, autor, fecha_creacion)"),
+    orden: str = Query("asc", description="asc para ascendente o desc para descendente"),
+    limit: int = Query(10, ge=1, le=25, description="Cantidad máxima de libros por página (1-25)"),
+    offset: int = Query(0, ge=0, description="Cantidad de libros a omitir desde el inicio")
+):
+    """
+    Lista libros con ordenamiento y paginación.
+
+    - **ordenar_por**: Campo por el cual ordenar los resultados.
+    - **orden**: Dirección del orden ('asc' o 'desc').
+    - **limit**: Cuántos libros devolver por página.
+    - **offset**: Cuántos libros saltar desde el inicio (para avanzar de página).
+    """
+    campos_validos = ["titulo", "autor", "isbn", "categoria", "estado", "fecha_creacion"]
+    if ordenar_por not in campos_validos:
+        raise HTTPException(status_code=400, detail=f"Campo de orden inválido: {ordenar_por}")
+
+    orden_orm = f"-{ordenar_por}" if orden == "desc" else ordenar_por
+    libros = await Libro.all().order_by(orden_orm).offset(offset).limit(limit)
+    return libros
+
 
 @app.get("/libros/{id}", response_model=LibroOut, summary="Obtener libro por ID", description="Devuelve los datos de un libro específico por su ID.")
 async def obtener_libro(id: int):
