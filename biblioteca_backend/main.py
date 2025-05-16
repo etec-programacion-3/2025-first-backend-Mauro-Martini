@@ -1,3 +1,6 @@
+"Para poder entrar a la supuesta App, se necesita entrar a 127.0.0.1/8000/docs"
+"Para activar el Uvicon se necesita utilizar el comando uvicorn biblioteca_backend.main:app --reload"
+
 from fastapi import FastAPI, HTTPException
 from tortoise import fields, models
 from tortoise.contrib.fastapi import register_tortoise
