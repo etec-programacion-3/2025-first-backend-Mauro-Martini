@@ -6,9 +6,17 @@ from tortoise import fields, models
 from tortoise.contrib.fastapi import register_tortoise
 from pydantic import BaseModel, Field, constr
 from typing import List
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="API Biblioteca", description="Gestión de libros - Fase 1", version="1.0.0")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permitir todas las orígenes
+    allow_credentials=True,
+    allow_methods=["*"],  # Permitir todos los métodos HTTP
+    allow_headers=["*"],  # Permitir todos los encabezados
+)
 # Modelo de Tortoise ORM (para la base de datos)
 class Libro(models.Model):
     id = fields.IntField(pk=True)
